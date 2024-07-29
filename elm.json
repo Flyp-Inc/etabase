@@ -4,7 +4,7 @@
     "summary": "Lightweight relational database management system",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
-    "exposed-modules": [],
+    "exposed-modules": [ "Col", "Table" ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
         "TSFoster/elm-uuid": "4.2.0 <= v < 5.0.0",
