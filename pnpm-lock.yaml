@@ -1,0 +1,82 @@
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+dependencies:
+  elm-tooling:
+    specifier: ^1.15.1
+    version: 1.15.1
+  run-pty:
+    specifier: ^5.0.0
+    version: 5.0.0
+
+packages:
+
+  /@lydell/node-pty-darwin-arm64@1.0.1:
+    resolution: {integrity: sha512-DtZOmuKQDSSya2Q7PCrzysd4Um5XKYYD4n8pWuaw8yi1unf9rLkPIxO3D/jIbxwttVhk1uN9H2dz3oU8uIzrRQ==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@lydell/node-pty-darwin-x64@1.0.1:
+    resolution: {integrity: sha512-VEkPOKVhmuh4HNaXY3M2N089c+kW2wCOWW9teeR/zKYtTDl+7RPhYAgbhRUn0OM0QBchp45IRYCBLpsC7KnHqA==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@lydell/node-pty-linux-x64@1.0.1:
+    resolution: {integrity: sha512-HOPx63Gi2CoyUe+Q9jYYRuvbzi7PuiUrFfDSDHlQ725e+3SVbE2ZOT/6uU85+PDV0wHg/C8cN3JDe5pLyzBkuw==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@lydell/node-pty-win32-arm64@1.0.1:
+    resolution: {integrity: sha512-auCh7jHuO/BvLogkdYOQxpuiMY4izGQ7LWqeUlG96hdWBlcpWfgFEbRpY3KBN4UlncK+A7mdE81WpA6Gz3I06A==}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@lydell/node-pty-win32-x64@1.0.1:
+    resolution: {integrity: sha512-jLFrTiqv1zXeJe5Ql5r/kTb/PAFf+4y8o2FhWsZecl2lX5y11zWmZFh2wJ3/YD5l1OhEa9X9/XigrfAGYSammw==}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@lydell/node-pty@1.0.1:
+    resolution: {integrity: sha512-Z/Gj+xizFU7WF5aMsBd8iBt0BfoqkgKz5w7g7pgUCxhoDDrtil1OA2MimbcEIh20KJFjanbf/QXERwKIHuybEQ==}
+    optionalDependencies:
+      '@lydell/node-pty-darwin-arm64': 1.0.1
+      '@lydell/node-pty-darwin-x64': 1.0.1
+      '@lydell/node-pty-linux-x64': 1.0.1
+      '@lydell/node-pty-win32-arm64': 1.0.1
+      '@lydell/node-pty-win32-x64': 1.0.1
+    dev: false
+
+  /elm-tooling@1.15.1:
+    resolution: {integrity: sha512-+rRYa7gzz6l2/Ip2i197MqkW5abOwPOP/+WlyyatLDeDhh+JR0HUMlZJYenCYodBeG/xW5xW3pRYQ2onf5bIAw==}
+    hasBin: true
+    dev: false
+
+  /run-pty@5.0.0:
+    resolution: {integrity: sha512-0gk83+2NmrZGGPlJ88lqt0dYHvgyau/JBdRz9OqEbNyIfmbiq9E5sGCsvHdjrLoUJVh09ZX9r5rN587ACoM3vQ==}
+    hasBin: true
+    dependencies:
+      '@lydell/node-pty': 1.0.1
+      tiny-decoders: 23.0.0
+    dev: false
+
+  /tiny-decoders@23.0.0:
+    resolution: {integrity: sha512-gQB+za3EW9JN1ASDmrVl1a1I6Q/jzg4M75YLI9ToHCdCW4/9KvBTTNH4u3kFbg8e+/8Zn68VRF+ayuiPNqYAmg==}
+    dev: false

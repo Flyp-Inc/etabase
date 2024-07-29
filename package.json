@@ -1,0 +1,17 @@
+{
+  "name": "etabase",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "run-pty % bash % pnpm test",
+    "test": "elm-test-rs --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "elm-tooling": "^1.15.1",
+    "run-pty": "^5.0.0"
+  }
+}
