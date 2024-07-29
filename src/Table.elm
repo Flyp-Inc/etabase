@@ -1,9 +1,10 @@
 module Table exposing
     ( Table, init
+    , Id, Row
     , Config, define
     , Spec, Index, Predicate, toSpec, withIndex
-    , cons, update, delete
-    , getById, where_, filter
+    , cons, consBatch, update, delete
+    , getById, where_, filter, select
     )
 
 {-| Represents a "table" semantic, where a "table" is a a dictionary of values that have a unique identity, and a "created at" timestamp.
@@ -12,9 +13,11 @@ In a traditional relational database management system, the database engine prov
 the `Table` type takes responsibility for mediating those operations.
 
 
-# Type
+# Types
 
 @docs Table, init
+
+@docs Id, Row
 
 
 # Configuration
@@ -26,12 +29,12 @@ the `Table` type takes responsibility for mediating those operations.
 
 # Commands
 
-@docs cons, update, delete
+@docs cons, consBatch, update, delete
 
 
 # Queries
 
-@docs getById, where_, filter
+@docs getById, where_, filter, select
 
 -}
 
@@ -55,6 +58,16 @@ type Table a
         }
 
 
+type Id a
+    = Id String
+
+
+{-| Represents a row created in a `Table a`.
+-}
+type alias Row a =
+    { id : Id a, value : a, createdAt : Time.Posix }
+
+
 {-| Create a new `Table`.
 
 Each table contains a `Random.Seed` that is stepped every time you insert a new record, to generate that record's unique identifier.
@@ -74,46 +87,16 @@ init =
 
 
 {-| Represent configuration details for a table.
-
-Internally, configuration is:
-
-    - A mapping between a `String` and the ID type for your table
-    - A representation of any indexes
-
 -}
-type Config id a
-    = Config (String -> id) (id -> String) (List (Index a))
+type Config a
+    = Config (List (Index a))
 
 
 {-| Define a table's configuration.
-
-The minimum-required configuration for a table is "a mapping between a `String` and an ID type". ID values are represented interally as a `String`, so
-the path-of-least-resistance here is to just use the `identity` function; but for a tiny bit more effort, you can have an `Id` type that is unique to your table -
-and that makes your code quite a bit easier to read, and it gives the compiler more information so that it can keep you from accidentally using the `String`-value of
-a row's ID for the wrong thing!
-
-Here's what this could look like:
-
-    ```
-    module User exposing (..)
-
-    import Table
-
-    type alias Record =
-        { emailAddress : String }
-
-    type Id
-        = Id String
-
-    config : Table.Config Id Record
-    config =
-        Table.define Id
-    ```
-
 -}
-define : (String -> id) -> (id -> String) -> Config id a
-define toId fromId =
-    Config toId fromId []
+define : Config a
+define =
+    Config []
 
 
 type alias Spec a b =
@@ -186,45 +169,15 @@ toSpec name accessor toString =
 
 {-| Add an `Index a` to a `Table a`.
 -}
-withIndex : Index a -> Config id a -> Config id a
-withIndex idx (Config toId fromId indexes) =
-    Config toId fromId <| idx :: indexes
+withIndex : Index a -> Config a -> Config a
+withIndex idx (Config indexes) =
+    Config <| idx :: indexes
 
 
 {-| Insert a record into a `Table`.
-
-It is assumed that you will use this function in your own code to create a `cons` function for each type `a` that is going to be stored in a `Table a`,
-by partially applying the `(String -> id)` function. For instance, in a module `User`, here is what that would look like:
-
-    ```
-    module User exposing (Id, Record, cons)
-
-    import Table
-    import Time
-
-    type Id
-        = Id String
-
-
-    type alias Table =
-        Table.Table Record
-
-    type alias Record =
-        { emailAddress : String
-        }
-
-
-    cons : Time.Posix -> Record -> Table -> ( { id : Id, value : Record, createdAt : Time.Posix }, Table )
-    cons =
-        Table.cons Id
-    ```
-
-The nice thing about using `lamdera-extra` is that since there is always a `Time.Posix` value representing the current timestamp available
-in the `update` function in `Backend`, this doesn't have to be wrapped in a `Task` or a `Cmd`.
-
 -}
-cons : Config id a -> Time.Posix -> a -> Table a -> ( { id : id, value : a, createdAt : Time.Posix }, Table a )
-cons (Config toId _ indexes) timestamp value (Table table) =
+cons : Config a -> Time.Posix -> a -> Table a -> ( Row a, Table a )
+cons (Config indexes) timestamp value (Table table) =
     let
         ( uuid, newSeed ) =
             Random.step UUID.generator table.seed
@@ -241,7 +194,7 @@ cons (Config toId _ indexes) timestamp value (Table table) =
         index =
             addIdToIndexByKeys internalId indexKeys table.index
     in
-    ( { id = toId internalId
+    ( { id = Id internalId
       , value = value
       , createdAt = timestamp
       }
@@ -260,34 +213,20 @@ cons (Config toId _ indexes) timestamp value (Table table) =
     )
 
 
+{-| Insert many records into a `Table`.
+-}
+consBatch : Config a -> Time.Posix -> List a -> Table a -> ( List (Row a), Table a )
+consBatch config timestamp values table =
+    List.foldl
+        (\step ( accList, accTable ) ->
+            cons config timestamp step accTable
+                |> Tuple.mapFirst (\new -> new :: accList)
+        )
+        ( [], table )
+        values
+
+
 {-| Update a record in a `Table`.
-
-It is assumed that you will use this function in your own code to create an `update` function for each type `a` that is going to be stored in a `Table a`,
-by partially applying the `String` value. For instance, in a module `User`, here is what that would look like:
-
-    ```
-    module User exposing (Id, Record, cons)
-
-    import Table
-    import Time
-
-    type Id
-        = Id String
-
-
-    type alias Table =
-        Table.Table Record
-
-
-    type alias Record =
-        { emailAddress : String
-        }
-
-
-    update : Id -> Time.Posix -> Record -> Table -> Table
-    update (Id id) =
-        Table.update id
-    ```
 
 The `Table a` type doesn't track "updated at", since it's assumed that if you care about that, you will wrap each column whose "updated at" time is meaningful in a `Col a`.
 
@@ -297,13 +236,9 @@ The `Table a` type doesn't track "updated at", since it's assumed that if you ca
 and "things that only change once in awhile" are handled by calls to `update`.
 
 -}
-update : Config id a -> id -> Time.Posix -> a -> Table a -> Table a
-update (Config toId fromId indexes) id timestamp value (Table table) =
+update : Config a -> Id a -> Time.Posix -> a -> Table a -> Table a
+update (Config indexes) (Id internalId) timestamp value (Table table) =
     let
-        internalId : String
-        internalId =
-            fromId id
-
         oldIndexKeys : Set.Set Int
         oldIndexKeys =
             Dict.get internalId table.dict
@@ -328,13 +263,9 @@ update (Config toId fromId indexes) id timestamp value (Table table) =
 
 {-| Delete a record from a `Table`.
 -}
-delete : Config id a -> Time.Posix -> id -> Table a -> Table a
-delete (Config toId fromId indexes) timestamp id ((Table table) as table_) =
+delete : Config a -> Time.Posix -> Id a -> Table a -> Table a
+delete (Config indexes) timestamp (Id internalId) ((Table table) as table_) =
     let
-        internalId : String
-        internalId =
-            fromId id
-
         toUpdatedIndex : Set.Set Int -> Dict.Dict Int (Set.Set String)
         toUpdatedIndex indexKeys =
             dropIdFromIndexByKeys internalId indexKeys table.index
@@ -354,12 +285,13 @@ delete (Config toId fromId indexes) timestamp id ((Table table) as table_) =
 
 {-| Get a value by its `id`.
 -}
-getById : Config id a -> id -> Table a -> Maybe { value : a, createdAt : Time.Posix }
-getById (Config _ fromId _) id (Table table) =
-    Dict.get (fromId id) table.dict
+getById : Id a -> Table a -> Maybe (Row a)
+getById ((Id internalId) as id) (Table table) =
+    Dict.get internalId table.dict
         |> Maybe.map
             (\record ->
-                { value = record.value
+                { id = id
+                , value = record.value
                 , createdAt = record.createdAt
                 }
             )
@@ -447,6 +379,20 @@ addIdToIndexByKeys internalId indexKeys index =
         )
         index
         indexKeys
+
+
+{-| Select rows from a `Table a`.
+
+This will operate on _all_ rows in a given `Table a`, so it may be wise to use `where_` and `filter` to narrow the `Table` to _what you actually want_ before calling `select`.
+
+-}
+select : (Row a -> b) -> Table a -> List b
+select func (Table { dict }) =
+    List.map
+        (\( id, { value, createdAt } ) ->
+            func { id = Id id, value = value, createdAt = createdAt }
+        )
+        (Dict.toList dict)
 
 
 {-| Remove a record's internal ID from a table's index
