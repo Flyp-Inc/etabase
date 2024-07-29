@@ -1,6 +1,6 @@
 module Table exposing
     ( Table, init
-    , Id, Row
+    , Row, Id
     , Config, define
     , Spec, Index, Predicate, toSpec, withIndex
     , cons, consBatch, update, delete
@@ -17,7 +17,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Table, init
 
-@docs Id, Row
+@docs Row, Id
 
 
 # Configuration
@@ -58,23 +58,19 @@ type Table a
         }
 
 
-type Id a
-    = Id String
-
-
 {-| Represents a row created in a `Table a`.
 -}
 type alias Row a =
     { id : Id a, value : a, createdAt : Time.Posix }
 
 
+{-| Represents a unique ID for a `Row` in a `Table a`.
+-}
+type Id a
+    = Id String
+
+
 {-| Create a new `Table`.
-
-Each table contains a `Random.Seed` that is stepped every time you insert a new record, to generate that record's unique identifier.
-How you choose to create that `Random.Seed` value is up to you; in a tranditional relational database, it is not uncommon for identities
-to be unique at the _table_ level; so if you don't need your record identities to be _globally_ unique, it would be OK to simply use `Random.initialSeed 0`
-as the identity for every instance of `Table` in your application.
-
 -}
 init : Table a
 init =
@@ -86,19 +82,28 @@ init =
         }
 
 
-{-| Represent configuration details for a table.
+{-| Configuration details for a table.
 -}
 type Config a
     = Config (List (Index a))
 
 
 {-| Define a table's configuration.
+
+This value returns an empty `Config a`, and can be "built" with other functions in this module whose type signature ends in `Config a -> Config a`.
+
 -}
 define : Config a
 define =
     Config []
 
 
+{-| A `Spec a b` is a record that contains:
+
+  - An `Index a`, which makes lookups faster for a given column
+  - A `Predicate a b`, which allows searching for a `Row a` in a `Table a` by some value `b`, which has the same type as the value indexed
+
+-}
 type alias Spec a b =
     { index : Index a
     , predicate : Predicate a b
@@ -109,8 +114,8 @@ type alias Spec a b =
 
 Internally, an index is:
 
-    - A unique identifier (i.e., the index name)
-    - A map between a property on an `a` and an `Int`
+  - A unique identifier (i.e., the index name)
+  - A map between a property on an `a` and an `Int`
 
 When you _query_ a table, you query it by its indexes. This doesn't mean that you need to create an index for every column! The columns
 that you should create indexes for are the columns that will help you identify a record, or identify a group of records by some column that
@@ -118,7 +123,6 @@ is a member of a smaller set compared to other columns.
 
 Consider the following:
 
-    ```
     module User exposing (..)
 
     import Table
@@ -132,11 +136,11 @@ Consider the following:
     type Role
         = Admin
         | Member
-    ```
 
 If we need to run queries against `User.Record` to find all users that are `Admin` users, it would make sense to create an index on the `.role`
-column, because the `Role` type is a member of a set that only has two values - `Admin` or `Member`. It wouldn't make much sense to create an index
-on the `.catchphrase` column - since that column is likely going to be unique for each user, anyway - so if we really needed to do a query against
+column, because the `Role` type is a member of a set that only has two values - `Admin` or `Member`.
+
+It wouldn't make much sense to create an index on the `.catchphrase` column - since that column is likely going to be unique for each user, anyway - so if we really needed to do a query against
 the `.catchphrase` column, we would have to consider every record separately, no matter what.
 
 -}
@@ -144,6 +148,12 @@ type Index a
     = Index (a -> Int)
 
 
+{-| An opaque function that acts as an interface between the `Index a` values within a table's `Config a`,
+and the type of a column that has an `Index a`.
+
+See usage at [`where_`](#where_) for more information.
+
+-}
 type Predicate a b
     = Predicate (b -> Int)
 
@@ -228,9 +238,9 @@ consBatch config timestamp values table =
 
 {-| Update a record in a `Table`.
 
-The `Table a` type doesn't track "updated at", since it's assumed that if you care about that, you will wrap each column whose "updated at" time is meaningful in a `Col a`.
+The `Table a` type doesn't track "updated at", since it's assumed that if you care about that, you will wrap each column whose "updated at" time is meaningful, in a `Col a`.
 
-`update` doesn't return a tuple of the updated record and the updated table; `cons` only returns a tuple because `cons` is responsible for creating the `id` value.
+`update` doesn't return a tuple of the updated record and the updated table; `cons` only returns a tuple because `cons` is responsible for creating the `Id a` value.
 
 `update` is an expensive operation, because it rebuilds the indexes for a `Table a`; prefer data structures such that "things that change often" are defined as calls to `cons`,
 and "things that only change once in awhile" are handled by calls to `update`.
@@ -326,8 +336,8 @@ where_ (Predicate toIndexKey) term (Table table) =
 
 This does _not_ use any of a table's indexes. If you need to use `filter`, then consider either:
 
-    - Creating an `Index a` so that you can have a `Predicate b` to use with `where_`, or
-    - Filtering the result set down as much as possible by `where_` first, before applying `filter`
+  - Creating an `Index a` so that you can have a `Predicate a b` to use with `where_`, or
+  - Filtering the result set down as much as possible by `where_` first, before applying `filter`
 
 -}
 filter : (a -> Bool) -> Table a -> Table a
@@ -357,8 +367,8 @@ toIndexKeys indexes value =
 
 {-| Add a record's internal ID to a table's index; the index is represented as a dictionary:
 
-    - the key is a unique hash of the value of a column
-    - the value is a set of internal ID values that represent "records where this column's value hashes to the value of the key"
+  - the key is a unique hash of the value of a column
+  - the value is a set of internal ID values that represent "records where this column's value hashes to the value of the key"
 
 -}
 addIdToIndexByKeys : String -> Set.Set Int -> Dict.Dict Int (Set.Set String) -> Dict.Dict Int (Set.Set String)

@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "run-pty % bash % pnpm test",
-    "test": "elm-test-rs --watch"
+    "start": "run-pty % bash % elm-test-rs --watch % elm-doc-preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "elm-doc-preview": "^5.0.5",
     "elm-tooling": "^1.15.1",
     "run-pty": "^5.0.0"
   }
