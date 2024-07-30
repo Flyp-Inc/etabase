@@ -5,6 +5,8 @@ module Table exposing
     , Spec, Index, Predicate, toSpec, withIndex
     , cons, consBatch, update, delete
     , getById, where_, filter, select
+    , idEncoder, idDecoder
+    , rowEncoder, rowDecoder
     )
 
 {-| Represents a "table" semantic, where a "table" is a a dictionary of values that have a unique identity, and a "created at" timestamp.
@@ -36,9 +38,20 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs getById, where_, filter, select
 
+
+# JSON
+
+Note: There is no encoder or decoder for `Table a`. Serializing and deserializing identity generation would be a tricky thing to have to do, so for now I am making the artistic choice to deal with it by not dealing with it at all.
+
+@docs idEncoder, idDecoder
+@docs rowEncoder, rowDecoder
+
 -}
 
 import Dict
+import Iso8601
+import Json.Decode
+import Json.Encode
 import Murmur3
 import Random
 import Set
@@ -432,3 +445,38 @@ dropIdFromIndexByKeys internalId indexKeys index =
         )
         index
         indexKeys
+
+
+{-| Encoder for an `Id a`.
+-}
+idEncoder : Id a -> Json.Encode.Value
+idEncoder (Id id) =
+    Json.Encode.string id
+
+
+{-| Decoder for an `Id a`.
+-}
+idDecoder : Json.Decode.Decoder (Id a)
+idDecoder =
+    Json.Decode.map Id Json.Decode.string
+
+
+{-| Encoder for a `Row a`.
+-}
+rowEncoder : (a -> Json.Encode.Value) -> Row a -> Json.Encode.Value
+rowEncoder valueEncoder { id, value, createdAt } =
+    Json.Encode.object
+        [ ( "id", idEncoder id )
+        , ( "value", valueEncoder value )
+        , ( "createdAt", Iso8601.encode createdAt )
+        ]
+
+
+{-| Decoder for a `Row a`.
+-}
+rowDecoder : Json.Decode.Decoder a -> Json.Decode.Decoder (Row a)
+rowDecoder valueDecoder =
+    Json.Decode.map3 Row
+        (Json.Decode.field "id" idDecoder)
+        (Json.Decode.field "value" valueDecoder)
+        (Json.Decode.field "createdAt" Iso8601.decoder)
