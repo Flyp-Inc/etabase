@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "run-pty % bash % elm-test-rs --watch % elm-doc-preview"
+    "start": "run-pty % bash % elm-test-rs --watch % elm-doc-preview --port 7999"
   },
   "keywords": [],
   "author": "",
