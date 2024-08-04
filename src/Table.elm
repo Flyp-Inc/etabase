@@ -1,6 +1,6 @@
 module Table exposing
     ( Table, init
-    , Row, Id
+    , Row, Id, unwrapId
     , Config, define
     , Spec, Index, Predicate, toSpec, withIndex
     , cons, consBatch, update, delete
@@ -19,7 +19,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Table, init
 
-@docs Row, Id
+@docs Row, Id, unwrapId
 
 
 # Configuration
@@ -81,6 +81,13 @@ type alias Row a =
 -}
 type Id a
     = Id String
+
+
+{-| Unwrap the inner value of an `Id a`. This is primarily exposed to facilitate creating a `Spec a b`, where the `b` contains a value `Id c`.
+-}
+unwrapId : Id a -> String
+unwrapId (Id value) =
+    value
 
 
 {-| Create a new `Table`.
