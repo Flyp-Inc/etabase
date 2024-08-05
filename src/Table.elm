@@ -2,7 +2,7 @@ module Table exposing
     ( Table, init
     , Row, Id, unwrapId
     , Config, define
-    , Spec, Index, Predicate, toSpec, withIndex
+    , Spec, Index, Predicate, toSpec, toSpecBool, withIndex
     , cons, consBatch, update, delete
     , getById, where_, filter, select
     , idEncoder, idDecoder
@@ -26,7 +26,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Config, define
 
-@docs Spec, Index, Predicate, toSpec, withIndex
+@docs Spec, Index, Predicate, toSpec, toSpecBool, withIndex
 
 
 # Commands
@@ -195,6 +195,22 @@ toSpec name accessor toString =
     { index = Index (\value -> accessor value |> toHashedValue)
     , predicate = Predicate toHashedValue
     }
+
+
+{-| Convenience function to create a `Spec a b` where the `b` is a `Bool`.
+-}
+toSpecBool : String -> (a -> Bool) -> Spec a Bool
+toSpecBool name accessor =
+    toSpec name
+        accessor
+        (\v ->
+            case v of
+                True ->
+                    "T"
+
+                False ->
+                    "F"
+        )
 
 
 {-| Add an `Index a` to a `Table a`.
