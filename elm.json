@@ -1,7 +1,7 @@
 {
     "type": "package",
     "name": "flyp-inc/etabase",
-    "summary": "Lightweight relational database management system",
+    "summary": "A relational database semantic for the Elm programming language",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [
