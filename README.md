@@ -122,13 +122,13 @@ init =
 
 findByEmailAddress : { emailAddress : String } -> Table -> Maybe Row
 findByEmailAddress { emailAddress } table =
-    Table.where_ specEmailAddress.predicate emailAddress table
+    Table.where_ specEmailAddress.is emailAddress table
         |> Table.select identity
         |> List.head
 
 
 getByRole : Role -> Table -> Table
 getByRole role =
-    Table.where_ specRole.predicate role
+    Table.where_ specRole.is role
 
 ```
