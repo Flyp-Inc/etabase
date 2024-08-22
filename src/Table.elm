@@ -1,9 +1,9 @@
 module Table exposing
     ( Table, init
-    , Row, Id, unwrapId
+    , Row, Id
     , Config, define
-    , Spec, Index, Predicate, toSpec, toSpecBool, withIndex
-    , cons, consBatch, update, delete
+    , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
+    , insert, insertMany, update, delete
     , getById, where_, filter, select
     , idEncoder, idDecoder
     , rowEncoder, rowDecoder
@@ -19,19 +19,19 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Table, init
 
-@docs Row, Id, unwrapId
+@docs Row, Id
 
 
 # Configuration
 
 @docs Config, define
 
-@docs Spec, Index, Predicate, toSpec, toSpecBool, withIndex
+@docs Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
 
 
 # Commands
 
-@docs cons, consBatch, update, delete
+@docs insert, insertMany, update, delete
 
 
 # Queries
@@ -83,13 +83,6 @@ type Id a
     = Id String
 
 
-{-| Unwrap the inner value of an `Id a`. This is primarily exposed to facilitate creating a `Spec a b`, where the `b` contains a value `Id c`.
--}
-unwrapId : Id a -> String
-unwrapId (Id value) =
-    value
-
-
 {-| Create a new `Table`.
 -}
 init : Table a
@@ -126,7 +119,7 @@ define =
 -}
 type alias Spec a b =
     { index : Index a
-    , predicate : Predicate a b
+    , is : Predicate a b
     }
 
 
@@ -193,8 +186,18 @@ toSpec name accessor toString =
                 toString col
     in
     { index = Index (\value -> accessor value |> toHashedValue)
-    , predicate = Predicate toHashedValue
+    , is = Predicate toHashedValue
     }
+
+
+{-| Convenience function to create a `Spec a b` where the `b` is an `Id b` - i.e., where you'd like to index or filter by a column in your table
+that is an `Id b` for some `Table b`.
+-}
+toSpecId : String -> (a -> Id b) -> Spec a (Id b)
+toSpecId name accessor =
+    toSpec name
+        accessor
+        (\(Id v) -> v)
 
 
 {-| Convenience function to create a `Spec a b` where the `b` is a `Bool`.
@@ -222,8 +225,8 @@ withIndex idx (Config indexes) =
 
 {-| Insert a record into a `Table`.
 -}
-cons : Config a -> Time.Posix -> a -> Table a -> ( Row a, Table a )
-cons (Config indexes) timestamp value (Table table) =
+insert : Config a -> Time.Posix -> a -> Table a -> ( Row a, Table a )
+insert (Config indexes) timestamp value (Table table) =
     let
         ( uuid, newSeed ) =
             Random.step UUID.generator table.seed
@@ -261,11 +264,11 @@ cons (Config indexes) timestamp value (Table table) =
 
 {-| Insert many records into a `Table`.
 -}
-consBatch : Config a -> Time.Posix -> List a -> Table a -> ( List (Row a), Table a )
-consBatch config timestamp values table =
+insertMany : Config a -> Time.Posix -> List a -> Table a -> ( List (Row a), Table a )
+insertMany config timestamp values table =
     List.foldl
         (\step ( accList, accTable ) ->
-            cons config timestamp step accTable
+            insert config timestamp step accTable
                 |> Tuple.mapFirst (\new -> new :: accList)
         )
         ( [], table )
@@ -276,9 +279,9 @@ consBatch config timestamp values table =
 
 The `Table a` type doesn't track "updated at", since it's assumed that if you care about that, you will wrap each column whose "updated at" time is meaningful, in a `Col a`.
 
-`update` doesn't return a tuple of the updated record and the updated table; `cons` only returns a tuple because `cons` is responsible for creating the `Id a` value.
+`update` doesn't return a tuple of the updated record and the updated table; `insert` only returns a tuple because `insert` is responsible for creating the `Id a` value.
 
-`update` is an expensive operation, because it rebuilds the indexes for a `Table a`; prefer data structures such that "things that change often" are defined as calls to `cons`,
+`update` is an expensive operation, because it rebuilds the indexes for a `Table a`; prefer data structures such that "things that change often" are defined as calls to `insert`,
 and "things that only change once in awhile" are handled by calls to `update`.
 
 -}
