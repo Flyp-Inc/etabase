@@ -3,7 +3,7 @@
     "name": "flyp-inc/etabase",
     "summary": "A relational database semantic for the Elm programming language",
     "license": "BSD-3-Clause",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "exposed-modules": [
         "Col",
         "Table"
