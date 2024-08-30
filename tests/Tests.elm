@@ -43,7 +43,7 @@ suite =
             in
             \() ->
                 Expect.equal 2 <|
-                    (Table.where_ User.specRole.predicate User.Member table
+                    (Table.where_ User.specRole.is User.Member table
                         |> Table.select identity
                         |> List.length
                     )
@@ -67,13 +67,13 @@ timeZero =
 withRecord : ( Table.Row User.Record, Table.Table User.Record )
 withRecord =
     Table.init
-        |> Table.cons User.config timeZero (User.new timeZero { emailAddress = "john@pavlick.dev", role = User.Admin })
+        |> Table.insert User.config timeZero (User.new timeZero { emailAddress = "john@pavlick.dev", role = User.Admin })
 
 
 withRecords : ( List (Table.Row User.Record), Table.Table User.Record )
 withRecords =
     Table.init
-        |> (Table.consBatch User.config timeZero <|
+        |> (Table.insertMany User.config timeZero <|
                 List.map (User.new timeZero)
                     [ { emailAddress = "ceo@flypcard.com"
                       , role = User.Admin

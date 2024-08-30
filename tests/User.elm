@@ -83,7 +83,7 @@ init =
             new timeZero { emailAddress = emailAddress, role = Admin }
     in
     Tuple.second <|
-        Table.consBatch config timeZero (List.map toRecord [ "ceo@flypcard.com", "cto@flypcard.com" ]) Table.init
+        Table.insertMany config timeZero (List.map toRecord [ "ceo@flypcard.com", "cto@flypcard.com" ]) Table.init
 
 
 
@@ -92,11 +92,11 @@ init =
 
 findByEmailAddress : { emailAddress : String } -> Table -> Maybe Row
 findByEmailAddress { emailAddress } table =
-    Table.where_ specEmailAddress.predicate emailAddress table
+    Table.where_ specEmailAddress.is emailAddress table
         |> Table.select identity
         |> List.head
 
 
 getByRole : Role -> Table -> Table
 getByRole role =
-    Table.where_ specRole.predicate role
+    Table.where_ specRole.is role

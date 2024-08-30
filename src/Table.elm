@@ -1,10 +1,10 @@
 module Table exposing
     ( Table, init
-    , Row, Id
+    , Row, Id, idToString
     , Config, define
     , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
     , insert, insertMany, update, delete
-    , getById, where_, filter, select
+    , getById, where_, filter, select, getByIdUnsafe
     , idEncoder, idDecoder
     , rowEncoder, rowDecoder
     )
@@ -19,7 +19,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Table, init
 
-@docs Row, Id
+@docs Row, Id, idToString
 
 
 # Configuration
@@ -36,7 +36,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 # Queries
 
-@docs getById, where_, filter, select
+@docs getById, where_, filter, select, getByIdUnsafe
 
 
 # JSON
@@ -81,6 +81,13 @@ type alias Row a =
 -}
 type Id a
     = Id String
+
+
+{-| Use an `Id a` as a string. Maybe you want to use an `Id a` in a URL as a parameter? That would be a good use for this; but in most cases, an `Id a` should be represented as a value of its type.
+-}
+idToString : Id a -> String
+idToString (Id a) =
+    a
 
 
 {-| Create a new `Table`.
@@ -471,6 +478,13 @@ dropIdFromIndexByKeys internalId indexKeys index =
         )
         index
         indexKeys
+
+
+{-| Get a value from a `Table a` by a `String` representation of its `Id a`.
+-}
+getByIdUnsafe : String -> Table a -> Maybe (Row a)
+getByIdUnsafe internalId =
+    getById (Id internalId)
 
 
 {-| Encoder for an `Id a`.
