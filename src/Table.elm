@@ -4,7 +4,8 @@ module Table exposing
     , Config, define
     , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
     , insert, insertMany, update, delete
-    , getById, where_, filter, select, getByIdUnsafe
+    , getById, where_, filter, select, getByIdUnsafe, getByIds, getByIdsNonempty
+    , IdDict, toIdDict, getFromIdDict
     , idEncoder, idDecoder
     , rowEncoder, rowDecoder
     )
@@ -15,7 +16,7 @@ In a traditional relational database management system, the database engine prov
 the `Table` type takes responsibility for mediating those operations.
 
 
-# Types
+# Table
 
 @docs Table, init
 
@@ -36,7 +37,12 @@ the `Table` type takes responsibility for mediating those operations.
 
 # Queries
 
-@docs getById, where_, filter, select, getByIdUnsafe
+@docs getById, where_, filter, select, getByIdUnsafe, getByIds, getByIdsNonempty
+
+
+# IdDict
+
+@docs IdDict, toIdDict, getFromIdDict
 
 
 # JSON
@@ -353,6 +359,26 @@ getById ((Id internalId) as id) (Table table) =
             )
 
 
+{-| Get a list of values by their `ids`
+-}
+getByIds : List (Id a) -> Table a -> List (Row a)
+getByIds ids table =
+    List.map (\id -> getById id table) ids
+        |> List.filterMap identity
+
+
+{-| Get a list of values by their `ids`, as a nonempty list; will return a `Nothing` if no values are found
+-}
+getByIdsNonempty : List (Id a) -> Table a -> Maybe ( Row a, List (Row a) )
+getByIdsNonempty ids table =
+    case getByIds ids table of
+        x :: xs ->
+            Just ( x, xs )
+
+        [] ->
+            Nothing
+
+
 {-| Query values in a table based on a `Predicate a b`.
 -}
 where_ : Predicate a b -> b -> Table a -> Table a
@@ -492,6 +518,35 @@ getByIdUnsafe internalId =
 idEncoder : Id a -> Json.Encode.Value
 idEncoder (Id id) =
     Json.Encode.string id
+
+
+{-| Dictionary that uses an `Id a` as its key; useful for projecting results into a new form at the end of a series of queries,
+where a given `Table a`'s `Id a` is the identity for that result.
+-}
+type IdDict a b
+    = IdDict (Dict.Dict String b)
+
+
+{-| Given a `Table a`, apply a function `a -> b` to its `Row a` values and return them as an an `IdDict a b`.
+-}
+toIdDict : (Row a -> b) -> Table a -> IdDict a b
+toIdDict fromRow table =
+    select identity table
+        |> List.map
+            (\row ->
+                ( idToString row.id
+                , fromRow row
+                )
+            )
+        |> Dict.fromList
+        |> IdDict
+
+
+{-| Get a value from an `IdDict a b` by an `Id a` key.
+-}
+getFromIdDict : Id a -> IdDict a b -> Maybe b
+getFromIdDict (Id key) (IdDict dict) =
+    Dict.get key dict
 
 
 {-| Decoder for an `Id a`.
