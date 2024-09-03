@@ -5,7 +5,7 @@ module Table exposing
     , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
     , insert, insertMany, update, delete
     , getById, where_, filter, select, getByIdUnsafe, getByIds, getByIdsNonempty
-    , IdDict, toIdDict, getFromIdDict
+    , IdDict, toIdDict, getFromIdDict, idDictToList
     , idEncoder, idDecoder
     , rowEncoder, rowDecoder
     )
@@ -42,7 +42,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 # IdDict
 
-@docs IdDict, toIdDict, getFromIdDict
+@docs IdDict, toIdDict, getFromIdDict, idDictToList
 
 
 # JSON
@@ -513,13 +513,6 @@ getByIdUnsafe internalId =
     getById (Id internalId)
 
 
-{-| Encoder for an `Id a`.
--}
-idEncoder : Id a -> Json.Encode.Value
-idEncoder (Id id) =
-    Json.Encode.string id
-
-
 {-| Read-only dictionary that uses an `Id a` as its key; useful for projecting results into a new form at the end of a series of queries,
 where a given `Table a`'s `Id a` is the identity for that result.
 -}
@@ -547,6 +540,21 @@ toIdDict fromRow table =
 getFromIdDict : Id a -> IdDict a b -> Maybe b
 getFromIdDict (Id key) (IdDict dict) =
     Dict.get key dict
+
+
+{-| Convert an `IdDict a b` to a list of all keys and values.
+-}
+idDictToList : IdDict a b -> List ( Id a, b )
+idDictToList (IdDict dict) =
+    Dict.toList dict
+        |> List.map (Tuple.mapFirst Id)
+
+
+{-| Encoder for an `Id a`.
+-}
+idEncoder : Id a -> Json.Encode.Value
+idEncoder (Id id) =
+    Json.Encode.string id
 
 
 {-| Decoder for an `Id a`.
