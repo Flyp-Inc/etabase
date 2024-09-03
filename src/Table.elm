@@ -520,7 +520,7 @@ idEncoder (Id id) =
     Json.Encode.string id
 
 
-{-| Dictionary that uses an `Id a` as its key; useful for projecting results into a new form at the end of a series of queries,
+{-| Read-only dictionary that uses an `Id a` as its key; useful for projecting results into a new form at the end of a series of queries,
 where a given `Table a`'s `Id a` is the identity for that result.
 -}
 type IdDict a b
