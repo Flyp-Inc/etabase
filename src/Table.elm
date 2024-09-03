@@ -5,7 +5,7 @@ module Table exposing
     , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
     , insert, insertMany, update, delete
     , getById, where_, filter, select, getByIdUnsafe, getByIds, getByIdsNonempty
-    , IdDict, toIdDict, getFromIdDict, idDictToList
+    , IdDict, toIdDict, getFromIdDict, idDictToList, mapIdDict
     , idEncoder, idDecoder
     , rowEncoder, rowDecoder
     )
@@ -42,7 +42,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 # IdDict
 
-@docs IdDict, toIdDict, getFromIdDict, idDictToList
+@docs IdDict, toIdDict, getFromIdDict, idDictToList, mapIdDict
 
 
 # JSON
@@ -513,7 +513,7 @@ getByIdUnsafe internalId =
     getById (Id internalId)
 
 
-{-| Read-only dictionary that uses an `Id a` as its key; useful for projecting results into a new form at the end of a series of queries,
+{-| Dictionary that uses an `Id a` as its key; useful for projecting results into a new form at the end of a series of queries,
 where a given `Table a`'s `Id a` is the identity for that result.
 -}
 type IdDict a b
@@ -548,6 +548,28 @@ idDictToList : IdDict a b -> List ( Id a, b )
 idDictToList (IdDict dict) =
     Dict.toList dict
         |> List.map (Tuple.mapFirst Id)
+
+
+{-| Map an `IdDict a b` to an `IdDict a c`.
+
+Takes a `Maybe`-returning function as an input as it's assumed that you may use the `Id a` parameter
+to query another `Table` by ID, which may not return a value.
+
+-}
+mapIdDict : (Id a -> b -> Maybe c) -> IdDict a b -> IdDict a c
+mapIdDict func (IdDict dict) =
+    Dict.foldl
+        (\stepKey stepValue acc ->
+            case func (Id stepKey) stepValue of
+                Nothing ->
+                    acc
+
+                Just value ->
+                    Dict.insert stepKey value acc
+        )
+        Dict.empty
+        dict
+        |> IdDict
 
 
 {-| Encoder for an `Id a`.
