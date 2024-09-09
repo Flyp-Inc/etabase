@@ -1,12 +1,12 @@
 module Tests exposing (..)
 
 import Col
+import DemoUser
 import Expect
 import Set
 import Table
 import Test
 import Time
-import User
 
 
 suite : Test.Test
@@ -14,7 +14,7 @@ suite =
     Test.describe "etabase tests"
         [ Test.test "should create a record in an empty table" <|
             let
-                id : Table.Id User.Record
+                id : Table.Id DemoUser.Record
                 id =
                     withRecord |> Tuple.first |> .id
             in
@@ -37,13 +37,13 @@ suite =
                 Expect.equal (Set.size setIds) (List.length ids)
         , Test.test "Querying by an index should work" <|
             let
-                table : Table.Table User.Record
+                table : Table.Table DemoUser.Record
                 table =
                     Tuple.second withRecords
             in
             \() ->
                 Expect.equal 2 <|
-                    (Table.where_ User.specRole.is User.Member table
+                    (Table.where_ DemoUser.specRole.is DemoUser.Member table
                         |> Table.select identity
                         |> List.length
                     )
@@ -54,7 +54,7 @@ suite =
 -- setups
 
 
-init : Table.Table User.Record
+init : Table.Table DemoUser.Record
 init =
     Table.init
 
@@ -64,25 +64,25 @@ timeZero =
     Time.millisToPosix 0
 
 
-withRecord : ( Table.Row User.Record, Table.Table User.Record )
+withRecord : ( Table.Row DemoUser.Record, Table.Table DemoUser.Record )
 withRecord =
     Table.init
-        |> Table.insert User.config timeZero (User.new timeZero { emailAddress = "john@pavlick.dev", role = User.Admin })
+        |> Table.insert DemoUser.config timeZero (DemoUser.new timeZero { emailAddress = "john@pavlick.dev", role = DemoUser.Admin })
 
 
-withRecords : ( List (Table.Row User.Record), Table.Table User.Record )
+withRecords : ( List (Table.Row DemoUser.Record), Table.Table DemoUser.Record )
 withRecords =
     Table.init
-        |> (Table.insertMany User.config timeZero <|
-                List.map (User.new timeZero)
+        |> (Table.insertMany DemoUser.config timeZero <|
+                List.map (DemoUser.new timeZero)
                     [ { emailAddress = "ceo@flypcard.com"
-                      , role = User.Admin
+                      , role = DemoUser.Admin
                       }
                     , { emailAddress = "person@web.site"
-                      , role = User.Member
+                      , role = DemoUser.Member
                       }
                     , { emailAddress = "otherPerson@web.site"
-                      , role = User.Member
+                      , role = DemoUser.Member
                       }
                     ]
            )

@@ -1,4 +1,4 @@
-module User exposing (..)
+module DemoUser exposing (Record, Role(..), Row, Table, config, new, specRole)
 
 import Col
 import Table
@@ -71,32 +71,5 @@ new timestamp { emailAddress, role } =
     }
 
 
-init : Table
-init =
-    let
-        timeZero : Time.Posix
-        timeZero =
-            Time.millisToPosix 0
-
-        toRecord : String -> Record
-        toRecord emailAddress =
-            new timeZero { emailAddress = emailAddress, role = Admin }
-    in
-    Tuple.second <|
-        Table.insertMany config timeZero (List.map toRecord [ "ceo@flypcard.com", "cto@flypcard.com" ]) Table.init
-
-
 
 -- queries
-
-
-findByEmailAddress : { emailAddress : String } -> Table -> Maybe Row
-findByEmailAddress { emailAddress } table =
-    Table.where_ specEmailAddress.is emailAddress table
-        |> Table.select identity
-        |> List.head
-
-
-getByRole : Role -> Table -> Table
-getByRole role =
-    Table.where_ specRole.is role
