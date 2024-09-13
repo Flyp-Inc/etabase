@@ -1,6 +1,6 @@
 module Table exposing
     ( Table, init
-    , Row, Id, idToString
+    , Row, Id, idToString, equalsIdUnsafe
     , Config, define
     , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
     , insert, insertMany, update, delete
@@ -20,7 +20,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Table, init
 
-@docs Row, Id, idToString
+@docs Row, Id, idToString, equalsIdUnsafe
 
 
 # Configuration
@@ -94,6 +94,13 @@ type Id a
 idToString : Id a -> String
 idToString (Id a) =
     a
+
+
+{-| Compare an `Id a` to the unsafe string representation of an `Id a`.
+-}
+equalsIdUnsafe : Id a -> String -> Bool
+equalsIdUnsafe (Id safeId) internalId =
+    safeId == internalId
 
 
 {-| Create a new `Table`.
