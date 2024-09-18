@@ -1,11 +1,22 @@
-module Col exposing
-    ( Col
-    , init, cons, touch
-    , value, updatedAt, history
-    , toUpdatedAt
-    )
+module Col exposing (..)
 
-{-| Represents a "column" semantic, with support for tracking changes over time.
+{-| HACK: currently exposing `(..)` to make Lamdera shut the fuck up, since we're vendoring this at the moment
+
+here's the correct header:
+
+    module Col exposing
+        ( Col
+        , cons
+        , history
+        , init
+        , toUpdatedAt
+        , touch
+        , updatedAt
+        , value
+        )
+
+END HACK
+Represents a "column" semantic, with support for tracking changes over time.
 
 
 # Type

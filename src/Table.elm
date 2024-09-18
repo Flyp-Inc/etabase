@@ -1,16 +1,50 @@
-module Table exposing
-    ( Table, init
-    , Row, Id, idToString, equalsIdUnsafe
-    , Config, define
-    , Spec, Index, Predicate, toSpec, toSpecId, toSpecBool, withIndex
-    , insert, insertMany, update, delete
-    , getById, where_, filter, select, getByIdUnsafe, getByIds, getByIdsNonempty
-    , IdDict, toIdDict, getFromIdDict, idDictToList, mapIdDict
-    , idEncoder, idDecoder
-    , rowEncoder, rowDecoder
-    )
+module Table exposing (..)
 
-{-| Represents a "table" semantic, where a "table" is a a dictionary of values that have a unique identity, and a "created at" timestamp.
+{-| -- HACK: currently exposing `(..)` to make Lamdera shut the fuck up, since we're vendoring this at the moment
+
+here's the correct header:
+
+    module Table exposing
+        ( Config
+        , Id
+        , IdDict
+        , Index
+        , Predicate
+        , Row
+        , Spec
+        , Table
+        , define
+        , delete
+        , equalsIdUnsafe
+        , filter
+        , getById
+        , getByIdUnsafe
+        , getByIds
+        , getByIdsNonempty
+        , getFromIdDict
+        , idDecoder
+        , idDictToList
+        , idEncoder
+        , idToString
+        , init
+        , insert
+        , insertMany
+        , mapIdDict
+        , rowDecoder
+        , rowEncoder
+        , select
+        , toIdDict
+        , toSpec
+        , toSpecBool
+        , toSpecId
+        , update
+        , where_
+        , withIndex
+        )
+
+-- END HACK
+
+Represents a "table" semantic, where a "table" is a a dictionary of values that have a unique identity, and a "created at" timestamp.
 
 In a traditional relational database management system, the database engine provides a unique identity and can generate timestamps;
 the `Table` type takes responsibility for mediating those operations.
